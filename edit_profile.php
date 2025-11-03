@@ -95,6 +95,18 @@
                 <div class="section-divider">
                     <h3 class="card-title">Personal Information</h3>
                 </div>
+                <div class="flex flex-col items-center gap-4 mb-6">
+                    <div class="w-32 h-32 rounded-full shadow-md overflow-hidden border-4 border-[#b9da05]" id="profile-picture-preview">
+                        <!-- Preview will be inserted here -->
+                    </div>
+                    <div class="flex flex-col items-center gap-2">
+                        <label for="profile" class="cursor-pointer px-4 py-2 bg-[#27272a] text-white rounded-md hover:bg-[#3f3f46] transition-colors">
+                            <i class="fas fa-camera mr-2"></i>Change Profile Picture
+                        </label>
+                        <input type="file" id="profile" name="profilePicture" class="hidden" accept="image/*">
+                        <p class="text-sm text-gray-400">Maximum file size: 2MB. Supported formats: JPG, PNG</p>
+                    </div>
+                </div>
             </div>
 
             <div class="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -160,7 +172,7 @@
 
         <div class="mt-6 text-center text-sm text-gray-400">
             <p>To change your Name, College, Program, Student No., or Email Address, please contact BulSU MSC.<br>
-                To change your password, <a href="change_passwordform.html" class="text-[#b9da05] hover:underline">click here</a>.</p>
+                To change your password, <a href="change_password.php" class="text-[#b9da05] hover:underline">click here</a>.</p>
         </div>
 
         <div class="flex flex-col items-center text-center mt-6">
@@ -221,20 +233,89 @@
         } else {
             console.warn("⚠️ Not logged in or session expired.");
             alert("⚠️ Please log in first.");
-            window.location.href = "login.html";
+            window.location.href = "login.php";
         }
     });
 
     /**
-     * Load and Autofill Profile Data
+     * Handle Profile Picture Preview + Upload
+     */
+    const profileInput = document.getElementById("profile");
+    const previewContainer = document.getElementById("profile-picture-preview");
+
+    // ✅ 1. Preview image instantly
+    profileInput.addEventListener("change", async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Validate file type and size
+        const allowedTypes = ["image/jpeg", "image/png"];
+        if (!allowedTypes.includes(file.type)) {
+            alert("❌ Please upload a JPG or PNG image only.");
+            e.target.value = "";
+            return;
+        }
+        if (file.size > 2 * 1024 * 1024) { // 2MB
+            alert("❌ File too large! Max size is 2MB.");
+            e.target.value = "";
+            return;
+        }
+
+        // Instant preview
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            previewContainer.innerHTML = `<img src="${event.target.result}" alt="Profile Preview" class="w-full h-full object-cover" />`;
+        };
+        reader.readAsDataURL(file);
+
+        // ✅ 2. Upload to server
+        if (!studentId) {
+            alert("⚠️ Please wait until your profile loads before uploading.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("profile", file);
+
+        try {
+            const response = await fetch(`${API_BASE}/students/upload-profile/${studentId}`, {
+                method: "POST",
+                body: formData,
+                credentials: "include",
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                alert("✅ Profile picture updated successfully!");
+                // Update preview with new image path from server
+                if (result.file_url) {
+                    previewContainer.innerHTML = `<img src="${result.file_url}" alt="Profile Picture" class="w-full h-full object-cover" />`;
+                }
+            } else {
+                alert("⚠️ Upload failed: " + (result.message || "Unknown error"));
+            }
+        } catch (err) {
+            console.error("❌ Upload error:", err);
+            alert("❌ Failed to upload image. Please try again.");
+        }
+    });
+
+    /**
+     * 🖼️ Load existing profile picture when profile data loads
      */
     async function loadProfileData(id) {
         console.log("📥 Fetching profile data for ID:", id);
         const profileRes = await apiCall(`/students/${id}`, "GET");
 
         if (profileRes.success && profileRes.data) {
-            console.log("📄 Profile data received:", profileRes.data);
             const d = profileRes.data;
+
+            // 🖼️ Show existing profile picture (if any)
+            if (d.profile_image_path) {
+                previewContainer.innerHTML = `<img src="${API_BASE.replace('/api', '')}/${d.profile_image_path}" alt="Profile Picture" class="w-full h-full object-cover" />`;
+            } else {
+                previewContainer.innerHTML = `<div class="w-full h-full bg-[#27272a] flex items-center justify-center text-gray-400 text-sm">No Image</div>`;
+            }
 
             // ✅ Match database column names
             document.getElementById("mscCode").placeholder = d.msc_id || "";
