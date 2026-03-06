@@ -39,7 +39,7 @@ include '_header.php';
 </style>
 
 
-<main class="flex-grow pt-28 flex items-center justify-center min-h-screen p-4 sm:p-6">
+<main class="flex-grow pt-28 flex items-center justify-center min-h-screen p-4 sm:p-6 mt-8">
  <div class="w-full max-w-sm mx-auto p-6 sm:p-8 bg-[#011538] border border-[#b9da05] text-white rounded-2xl shadow-2xl page-auth-container">
  <h2 class="section-title">Login</h2>
 
@@ -74,7 +74,10 @@ class="w-full px-4 py-3 rounded-md bg-[#27272a] border border-gray-600 text-whit
 
  <div class="flex flex-col items-center text-center mt-4">
  <small class="text-gray-400 mt-2">Powered by <b>BulSU MSC</b></small>
- <a href="forgot_password.php" class="text-[#b9da05] mt-2 text-sm">Forgot password?</a>
+ <div class="flex flex-row justify-between w-full">
+    <a href="register.php" class="text-[#b9da05] mt-2 text-sm">Create an account</a>
+    <a href="forgot_password.php" class="text-[#b9da05] mt-2 text-sm">Forgot password?</a>
+ </div>
  </div>
  </div>
 </main>
